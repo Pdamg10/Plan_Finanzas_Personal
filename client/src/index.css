@@ -1,0 +1,37 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-slate-800 font-sans antialiased min-h-screen relative overflow-x-hidden;
+    /* Soft pastel gradient from image (Lilac -> Soft Pink) */
+    background: linear-gradient(120deg, #E0C3FC 0%, #D4D1FF 40%, #FFD1FF 100%);
+    background-attachment: fixed;
+    background-size: cover;
+  }
+}
+
+@layer components {
+    .btn-primary {
+        /* Soft purple/pink gradient button with shadow */
+        @apply bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-6 py-2.5 rounded-xl shadow-lg shadow-violet-500/30 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all font-semibold flex items-center gap-2 justify-center border border-white/20;
+    }
+    .btn-secondary {
+        @apply bg-white/40 backdrop-blur-md text-slate-700 px-6 py-2.5 rounded-xl hover:bg-white/60 transition-all font-semibold flex items-center gap-2 justify-center shadow-sm border border-white/40;
+    }
+    .input-field {
+        /* Glassy input */
+        @apply w-full px-5 py-3 rounded-xl bg-white/40 backdrop-blur-sm border border-white/60 focus:outline-none focus:ring-2 focus:ring-violet-400/50 focus:bg-white/60 transition-all placeholder:text-slate-400 text-slate-800;
+    }
+    .card {
+        /* Glassmorphism Card: blurred white background with soft border */
+        @apply bg-white/30 backdrop-blur-xl rounded-3xl shadow-xl shadow-indigo-100/20 border border-white/60 p-6;
+    }
+    .glass-panel {
+        /* Stronger glass effect for sidebar */
+        @apply bg-white/20 backdrop-blur-2xl border-r border-white/40 shadow-xl;
+    }
+}

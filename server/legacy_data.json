@@ -1,0 +1,11 @@
+{
+  "accounts": [
+    { "id": 1, "name": "Efectivo", "type": "efectivo", "balance": 500 },
+    { "id": 2, "name": "Banco Principal", "type": "banco", "balance": 1500 }
+  ],
+  "categories": [
+    { "id": 1, "name": "Comida", "type": "gasto" },
+    { "id": 2, "name": "Salario", "type": "ingreso" }
+  ],
+  "transactions": []
+}
