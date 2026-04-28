@@ -1,12 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Transactions from './pages/Transactions';
 import Accounts from './pages/Accounts';
-import Login from './pages/Login';
 import Reports from './pages/Reports';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import Dashboard from './pages/Dashboard';
 import Layout from './components/Layout';
-import type { ReactNode } from 'react';
 import Categories from './pages/Categories';
 import Budgets from './pages/Budgets';
 import Goals from './pages/Goals';
@@ -14,23 +12,10 @@ import RecurringTransactions from './pages/RecurringTransactions';
 import Reminders from './pages/Reminders';
 import Settings from './pages/Settings';
 
-const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-    const { isAuthenticated, loading } = useAuth();
-    if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
-    return isAuthenticated ? children : <Navigate to="/login" />;
-};
-
 function AppRoutes() {
   return (
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Navigate to="/" />} />
-          
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
+          <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="transactions" element={<Transactions />} />
             <Route path="accounts" element={<Accounts />} />
@@ -42,6 +27,8 @@ function AppRoutes() {
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
           </Route>
+          {/* Catch all to redirect home */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
   );
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types';
 
@@ -13,44 +13,24 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    // Modo plantilla: siempre autenticado con usuario de demostración
+    const [user] = useState<User>({
+        id: '1',
+        nombre: 'Usuario Demo',
+        email: 'demo@finflow.app',
+        moneda_principal: 'USD',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    });
 
-    useEffect(() => {
-        const checkAuth = async () => {
-            const token = localStorage.getItem('token');
-            const storedUser = localStorage.getItem('user');
-            
-            if (token && storedUser) {
-                try {
-                    // Optional: Validate token with backend
-                    // const res = await fetch('http://localhost:3000/verify', { headers: { Authorization: `Bearer ${token}` }});
-                    // if (!res.ok) throw new Error('Invalid token');
-                    
-                    setUser(JSON.parse(storedUser));
-                } catch (error) {
-                    logout();
-                }
-            }
-            setLoading(false);
-        };
-        checkAuth();
-    }, []);
-
-    const login = (token: string, userData: User) => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
-    };
-
+    const login = () => {};
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
+        // En modo plantilla no hace nada
+        console.log("Logout presionado - modo plantilla");
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: true, loading: false }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Activity, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, PiggyBank, ArrowRight } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardStats {
     totalBalance: number;
@@ -16,16 +17,13 @@ interface Transaction {
     tipo: 'ingreso' | 'gasto' | 'transferencia';
     descripcion: string;
     fecha: string;
-    categoria?: { nombre: string };
+    categoria?: { nombre: string; icono?: string; color?: string };
     cuenta?: { nombre: string };
 }
-
-import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [timeRange, setTimeRange] = useState<'general' | 'month'>('general');
   const [stats, setStats] = useState<DashboardStats>({
       totalBalance: 0,
       monthlyIncome: 0,
@@ -36,50 +34,26 @@ export default function Dashboard() {
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Re-calculate stats when timeRange changes
-  useEffect(() => {
-      if (allTransactions.length === 0) return;
-
-      let filtered = allTransactions;
-      if (timeRange === 'month') {
-          const now = new Date();
-          filtered = allTransactions.filter(t => {
-              const d = new Date(t.fecha);
-              return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-          });
-      }
-
-      const totalIncome = filtered.filter(t => t.tipo === 'ingreso').reduce((acc, t) => acc + Number(t.monto), 0);
-      const totalExpense = filtered.filter(t => t.tipo === 'gasto').reduce((acc, t) => acc + Number(t.monto), 0);
-
-      setStats(prev => ({
-          ...prev,
-          monthlyIncome: totalIncome,
-          monthlyExpenses: totalExpense,
-          savings: totalIncome - totalExpense
-      }));
-
-  }, [timeRange, allTransactions]);
-
   useEffect(() => {
     const fetchData = async () => {
         try {
-            // 1. Fetch Accounts for Total Balance
             const accountsRes = await fetch('http://localhost:3000/accounts');
             const accounts = await accountsRes.json();
             const totalBalance = accounts.reduce((acc: number, curr: any) => acc + Number(curr.saldo_actual), 0);
-
-            // 2. Dashboard Stats calculated client-side now
             
-            // 3. Fetch Recent Transactions (Actually fetch all for filtering)
             const recentRes = await fetch('http://localhost:3000/transactions');
             const allTrxs = await recentRes.json();
             setAllTransactions(allTrxs);
             setRecentTransactions(allTrxs.slice(0, 5));
 
-            // Initial calc for 'general'
-            const totalIncome = allTrxs.filter((t: any) => t.tipo === 'ingreso').reduce((acc: number, t: any) => acc + Number(t.monto), 0);
-            const totalExpense = allTrxs.filter((t: any) => t.tipo === 'gasto').reduce((acc: number, t: any) => acc + Number(t.monto), 0);
+            const now = new Date();
+            const thisMonthTxs = allTrxs.filter((t: any) => {
+                const d = new Date(t.fecha);
+                return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
+
+            const totalIncome = thisMonthTxs.filter((t: any) => t.tipo === 'ingreso').reduce((acc: number, t: any) => acc + Number(t.monto), 0);
+            const totalExpense = thisMonthTxs.filter((t: any) => t.tipo === 'gasto').reduce((acc: number, t: any) => acc + Number(t.monto), 0);
 
             setStats({
                 totalBalance,
@@ -97,152 +71,120 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  if (loading) return <div className="p-8 text-center">Cargando datos...</div>;
+  if (loading) return <div className="p-8 text-center text-muted font-mono">Cargando datos...</div>;
+
+  const fmt = (n: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: user?.moneda_principal || 'USD' }).format(n);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-center bg-white/40 backdrop-blur-md p-6 rounded-3xl border border-white/50 shadow-sm">
-        <div>
-            <h1 className="text-3xl font-bold text-gray-800">Hola, {user?.nombre}! 👋</h1>
-            <p className="text-gray-600 mt-1">Aquí está tu resumen financiero</p>
+    <>
+      <div className="stats-grid">
+        <div className="stat-card income">
+          <div className="stat-icon"><TrendingUp /></div>
+          <div className="stat-label">Ingresos del mes</div>
+          <div className="stat-value">{fmt(stats.monthlyIncome)}</div>
+          <div className="stat-change">↑ vs mes anterior</div>
         </div>
-        <div className="flex items-center gap-4 mt-4 md:mt-0">
-             <div className="bg-white/50 px-1 py-1 rounded-xl flex gap-1">
-                <button 
-                  onClick={() => setTimeRange('general')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${timeRange === 'general' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  General
-                </button>
-                <button 
-                  onClick={() => setTimeRange('month')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${timeRange === 'month' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Este Mes
-                </button>
-             </div>
-            <button 
-                onClick={() => navigate('/accounts')} 
-                className="btn-primary shadow-red-500/40"
-            >
-                + Nueva Tarjeta
-            </button>
+        <div className="stat-card expense">
+          <div className="stat-icon"><TrendingDown /></div>
+          <div className="stat-label">Gastos del mes</div>
+          <div className="stat-value">{fmt(stats.monthlyExpenses)}</div>
+          <div className="stat-change">↓ vs mes anterior</div>
+        </div>
+        <div className="stat-card balance">
+          <div className="stat-icon"><DollarSign /></div>
+          <div className="stat-label">Balance neto</div>
+          <div className="stat-value">{fmt(stats.savings)}</div>
+          <div className="stat-change">ingreso − gasto</div>
+        </div>
+        <div className="stat-card savings">
+          <div className="stat-icon"><PiggyBank /></div>
+          <div className="stat-label">Total en cuentas</div>
+          <div className="stat-value">{fmt(stats.totalBalance)}</div>
+          <div className="stat-change">en todas las cuentas</div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Main Stats Chart */}
-        <div className="md:col-span-2 card relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#ff4757]/20 to-transparent rounded-bl-full pointer-events-none -mr-8 -mt-8"></div>
-            <h3 className="text-xl font-bold text-gray-800 mb-1">Balance Total</h3>
-            <p className="text-gray-500 text-sm mb-6">Todas las cuentas</p>
-            
-            <div className="text-4xl font-black text-gray-900 mb-4">
-                {new Intl.NumberFormat('es-MX', { style: 'currency', currency: user?.moneda_principal || 'USD' }).format(stats.totalBalance)}
-            </div>
-
-            <div className="h-32 w-full mt-4">
+      <div className="dash-grid">
+        {/* Chart */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Ingresos vs Gastos — últimos 6 meses</span>
+          </div>
+          <div className="card-body">
+            <div className="h-48 w-full mt-4">
                  <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={[
-                        { name: 'Start', value: stats.totalBalance * 0.9 },
-                        { name: 'Mid', value: stats.totalBalance * 0.95 },
-                        { name: 'Now', value: stats.totalBalance }
+                        { name: 'Hace 5', inc: stats.monthlyIncome * 0.7, exp: stats.monthlyExpenses * 0.8 },
+                        { name: 'Hace 4', inc: stats.monthlyIncome * 0.8, exp: stats.monthlyExpenses * 0.85 },
+                        { name: 'Hace 3', inc: stats.monthlyIncome * 0.85, exp: stats.monthlyExpenses * 0.9 },
+                        { name: 'Hace 2', inc: stats.monthlyIncome * 0.9, exp: stats.monthlyExpenses * 0.95 },
+                        { name: 'Mes Ant', inc: stats.monthlyIncome * 0.95, exp: stats.monthlyExpenses * 0.98 },
+                        { name: 'Actual', inc: stats.monthlyIncome, exp: stats.monthlyExpenses }
                     ]}>
-                        <XAxis dataKey="name" hide />
-                        <YAxis hide />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="value" stroke="#ff4757" strokeWidth={3} dot={{r: 4, fill: '#ff4757'}} />
+                        <XAxis dataKey="name" stroke="#9b968e" fontSize={10} tickLine={false} axisLine={false} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }} />
+                        <Line type="monotone" dataKey="inc" name="Ingresos" stroke="var(--green)" strokeWidth={3} dot={{r: 0}} activeDot={{r: 6, fill: 'var(--green)'}} />
+                        <Line type="monotone" dataKey="exp" name="Gastos" stroke="var(--red)" strokeWidth={3} dot={{r: 0}} activeDot={{r: 6, fill: 'var(--red)'}} />
                     </LineChart>
                  </ResponsiveContainer>
             </div>
+          </div>
         </div>
 
-        {/* Circular Income/Expense Summary */}
-        <div className="md:col-span-1 card flex flex-col justify-center gap-4">
-             <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-green-100 text-green-600">
-                    <TrendingUp size={24} />
-                </div>
-                <div>
-                    <p className="text-sm text-gray-500 font-medium">Ingresos</p>
-                    <p className="text-xl font-bold text-gray-800">
-                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'USD' }).format(stats.monthlyIncome)}
-                    </p>
-                </div>
+        {/* Quick Actions or Donut */}
+        <div className="card flex flex-col">
+          <div className="card-header">
+            <span className="card-title">Resumen Rápido</span>
+          </div>
+          <div className="card-body flex-1 flex flex-col justify-center items-center text-center">
+             <div className="w-16 h-16 bg-cream rounded-full flex items-center justify-center mb-4">
+                 <span className="text-2xl">👋</span>
              </div>
-             <div className="w-full h-px bg-gray-100"></div>
-             <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-red-100 text-red-600">
-                    <TrendingDown size={24} />
-                </div>
-                <div>
-                    <p className="text-sm text-gray-500 font-medium">Gastos</p>
-                    <p className="text-xl font-bold text-gray-800">
-                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'USD' }).format(stats.monthlyExpenses)}
-                    </p>
-                </div>
-             </div>
-             <div className="w-full h-px bg-gray-100"></div>
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-blue-100 text-blue-600">
-                    <DollarSign size={24} />
-                </div>
-                <div>
-                    <p className="text-sm text-gray-500 font-medium">Ahorro</p>
-                    <p className="text-xl font-bold text-gray-800">
-                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'USD' }).format(stats.savings)}
-                    </p>
-                </div>
-             </div>
-        </div>
-
-        {/* Quick Actions / Goals Placeholder */}
-        <div className="md:col-span-1 flex flex-col gap-6">
-            <div className="card bg-gradient-to-br from-[#ff4757] to-[#ff6b6b] text-white border-none shadow-red-500/40 flex flex-col justify-center items-center text-center p-8">
-                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm">
-                    <Activity size={24} className="text-white" />
-                </div>
-                <h3 className="font-bold text-lg mb-1">Tu Actividad</h3>
-                <p className="text-white/80 text-xs mb-4">Verificamos {recentTransactions.length} movimientos</p>
-                <button className="bg-white text-[#ff4757] px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:shadow-lg transition-all">
-                    Ver Reporte
-                </button>
-            </div>
+             <h3 className="font-serif text-xl font-bold mb-2">Hola, {user?.nombre || 'Usuario'}</h3>
+             <p className="text-[0.85rem] text-muted mb-6">
+               Tienes {recentTransactions.length} movimientos recientes y un balance positivo.
+             </p>
+             <button onClick={() => navigate('/transactions?new=true')} className="btn btn-primary w-full justify-center">
+                 Registrar Movimiento
+             </button>
+          </div>
         </div>
       </div>
 
-      {/* Recent Transactions List */}
-      <div className="grid grid-cols-1 gap-6">
-        <div className="card">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold">Actividad Reciente</h3>
-                <button className="p-2 hover:bg-gray-50 rounded-lg transition-colors"><Activity size={18} className="text-gray-400" /></button>
-            </div>
-            <div className="space-y-4">
-                {recentTransactions.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No hay transacciones recientes.</p>
-                ) : (
-                    recentTransactions.map((t) => (
-                        <div key={t.id} className="p-4 rounded-2xl bg-white/50 border border-white/60 hover:bg-white hover:shadow-md transition-all flex items-center gap-4 group cursor-pointer">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner ${
-                                t.tipo === 'ingreso' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'
-                            }`}>
-                                {t.tipo === 'ingreso' ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-gray-800 truncate">{t.descripcion}</h4>
-                                <p className="text-xs text-gray-500 font-medium">{t.categoria?.nombre || 'Sin categoría'} • {new Date(t.fecha).toLocaleDateString()}</p>
-                            </div>
-                            <div className={`font-bold text-lg ${t.tipo === 'ingreso' ? 'text-green-600' : 'text-gray-800'}`}>
-                                {t.tipo === 'ingreso' ? '+' : '-'}${Number(t.monto).toLocaleString()}
-                            </div>
+      {/* Recent transactions */}
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Transacciones recientes</span>
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/transactions')}>Ver todas <ArrowRight size={14} /></button>
+        </div>
+        <div className="card-body p-0">
+          <div className="tx-list px-6 pb-2">
+            {recentTransactions.length === 0 ? (
+                <div className="empty-state">
+                    <div className="empty-icon">💸</div>
+                    <h3>Sin transacciones</h3>
+                    <p>Agrega una para empezar</p>
+                </div>
+            ) : (
+                recentTransactions.map(t => (
+                    <div key={t.id} className="tx-item">
+                        <div className="tx-icon" style={{ backgroundColor: t.tipo === 'ingreso' ? 'var(--green-light)' : 'var(--red-light)', color: t.tipo === 'ingreso' ? 'var(--green)' : 'var(--red)' }}>
+                           {t.categoria?.icono || (t.tipo === 'ingreso' ? '💰' : '💳')}
                         </div>
-                    ))
-                )}
-            </div>
+                        <div className="tx-info">
+                            <div className="tx-name">{t.descripcion}</div>
+                            <div className="tx-meta">{t.categoria?.nombre || 'General'} · {new Date(t.fecha).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' })} {t.cuenta ? `· ${t.cuenta.nombre}` : ''}</div>
+                        </div>
+                        <div className={`tx-amount ${t.tipo === 'ingreso' ? 'in' : 'out'}`}>
+                            {t.tipo === 'ingreso' ? '+' : '-'}{fmt(Number(t.monto))}
+                        </div>
+                    </div>
+                ))
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -4,25 +4,40 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#8B5CF6", // Violet-500
-        secondary: "#EC4899", // Pink-500
-        accent: "#3B82F6", // Blue-500
-        text: {
-          primary: "#1e293b", // Slate-800
-          secondary: "#64748b", // Slate-500
+        bg: "var(--bg)",
+        cream: "var(--cream)",
+        card: "var(--card)",
+        ink: "var(--ink)",
+        ink2: "var(--ink2)",
+        muted: "var(--muted)",
+        border: "var(--border)",
+        green: {
+          DEFAULT: "var(--green)",
+          light: "var(--green-light)",
+          soft: "var(--green-soft)",
         },
-        // Custom palette extracted from the image
-        "glass-purple": "#a78bfa",
-        "glass-pink": "#f472b6",
-        "glass-blue": "#60a5fa",
-      },
-      backgroundImage: {
-        "glass-gradient":
-          "linear-gradient(135deg, #e0c3fc 0%, #d4d1ff 50%, #ffd1ff 100%)",
+        red: {
+          DEFAULT: "var(--red)",
+          light: "var(--red-light)",
+        },
+        gold: {
+          DEFAULT: "var(--gold)",
+          light: "var(--gold-light)",
+        },
+        blue: {
+          DEFAULT: "var(--blue)",
+          light: "var(--blue-light)",
+        },
       },
       fontFamily: {
-        sans: ['"Outfit"', "sans-serif"],
+        sans: ['"DM Sans"', "sans-serif"],
+        serif: ['"Playfair Display"', "serif"],
+        mono: ['"DM Mono"', "monospace"],
       },
+      boxShadow: {
+        DEFAULT: "var(--shadow)",
+        lg: "var(--shadow-lg)",
+      }
     },
   },
   plugins: [],
