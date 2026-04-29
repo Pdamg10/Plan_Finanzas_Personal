@@ -25,7 +25,11 @@
   }
 
   body {
-    @apply bg-bg text-ink font-sans antialiased min-h-screen flex;
+    @apply bg-bg text-ink font-sans antialiased min-h-screen flex flex-col;
+  }
+
+  #root {
+    @apply w-full flex-1 flex flex-col min-h-screen;
   }
 }
 
@@ -94,10 +98,10 @@
 
   /* Stat Cards */
   .stats-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6;
+    @apply grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5 mb-6;
   }
   .stat-card {
-    @apply bg-card border border-border rounded-2xl p-[1.4rem] relative overflow-hidden shadow transition-all hover:-translate-y-0.5 hover:shadow-lg;
+    @apply bg-card border border-border rounded-2xl p-4 md:p-[1.4rem] relative overflow-hidden shadow transition-all hover:-translate-y-0.5 hover:shadow-lg;
   }
   .stat-card::after {
     content: '';
@@ -109,10 +113,10 @@
   .stat-card.savings::after { @apply bg-blue; }
 
   .stat-label {
-    @apply text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted mb-2;
+    @apply text-[0.7rem] md:text-xs font-semibold uppercase tracking-[0.1em] text-muted mb-2 pr-12 truncate block;
   }
   .stat-value {
-    @apply font-serif text-[1.8rem] font-bold leading-none tracking-tight;
+    @apply font-serif text-2xl lg:text-[1.8rem] font-bold leading-none tracking-tight truncate;
   }
   .stat-card.income .stat-value { @apply text-green; }
   .stat-card.expense .stat-value { @apply text-red; }
@@ -120,10 +124,10 @@
   .stat-card.savings .stat-value { @apply text-blue; }
 
   .stat-change {
-    @apply mt-2 text-[0.72rem] flex items-center gap-1 text-muted;
+    @apply mt-2 text-[0.72rem] flex items-center gap-1 text-muted truncate;
   }
   .stat-icon {
-    @apply absolute top-5 right-5 w-9 h-9 rounded-xl grid place-items-center;
+    @apply absolute top-4 right-4 md:top-5 md:right-5 w-9 h-9 rounded-xl grid place-items-center shrink-0;
   }
   .stat-icon svg { @apply w-[18px] h-[18px]; }
   
@@ -134,7 +138,7 @@
 
   /* Dashboard Grid */
   .dash-grid {
-    @apply grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 mb-5;
+    @apply grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-4 md:gap-5 mb-5;
   }
 
   /* Transactions */
