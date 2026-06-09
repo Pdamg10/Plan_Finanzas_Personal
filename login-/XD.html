@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Turso</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f172a;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #f8fafc;
+    }
+    .card {
+      background: #1e293b;
+      padding: 2.5rem;
+      border-radius: 1rem;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    h2 { margin-bottom: 1.5rem; text-align: center; }
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .tabs button {
+      flex: 1;
+      padding: 0.6rem;
+      border: none;
+      background: #334155;
+      color: #94a3b8;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .tabs button.active {
+      background: #3b82f6;
+      color: #fff;
+    }
+    input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.9rem;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 1rem;
+      outline: none;
+    }
+    input:focus { border-color: #3b82f6; }
+    button[type="submit"] {
+      width: 100%;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 0.5rem;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button[type="submit"]:hover { background: #2563eb; }
+    .error { color: #f87171; margin-top: 1rem; text-align: center; font-size: 0.9rem; }
+    .success { color: #4ade80; margin-top: 1rem; text-align: center; font-size: 0.9rem; }
+    .hidden { display: none; }
+    .user-card { text-align: center; }
+    .user-card h2 { margin-bottom: 0.5rem; }
+    .user-card p { color: #94a3b8; margin-bottom: 1.5rem; }
+    .logout-btn {
+      background: #ef4444 !important;
+    }
+    .logout-btn:hover {
+      background: #dc2626 !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="authCard">
+    <h2 id="title">🔐 Login</h2>
+    
+    <div class="tabs">
+      <button id="btnLogin" class="active" onclick="setMode('login')">Entrar</button>
+      <button id="btnRegister" onclick="setMode('register')">Crear cuenta</button>
+    </div>
+
+    <form id="form" onsubmit="handleSubmit(event)">
+      <input type="text" id="nombre" placeholder="Nombre" class="hidden">
+      <input type="email" id="correo" placeholder="Correo" required>
+      <input type="password" id="pass" placeholder="Contraseña" required>
+      <button type="submit" id="submitBtn">Entrar</button>
+    </form>
+
+    <p id="msg" class="hidden"></p>
+  </div>
+
+  <script>
+    const API = 'http://localhost:3001/api/auth';
+    let mode = 'login';
+
+    function setMode(m) {
+      mode = m;
+      document.getElementById('btnLogin').className = m === 'login' ? 'active' : '';
+      document.getElementById('btnRegister').className = m === 'register' ? 'active' : '';
+      document.getElementById('nombre').className = m === 'register' ? '' : 'hidden';
+      document.getElementById('submitBtn').textContent = m === 'login' ? 'Entrar' : 'Registrarme';
+      document.getElementById('title').textContent = m === 'login' ? '🔐 Login' : '📝 Registro';
+      document.getElementById('msg').className = 'hidden';
+    }
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const msg = document.getElementById('msg');
+      msg.className = 'hidden';
+
+      const nombre = document.getElementById('nombre').value;
+      const correo = document.getElementById('correo').value;
+      const pass = document.getElementById('pass').value;
+
+      const endpoint = mode === 'login' ? '/login' : '/register';
+      const body = mode === 'login' 
+        ? { correo, pass } 
+        : { nombre, correo, pass };
+
+      try {
+        const res = await fetch(API + endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          msg.textContent = data.error || 'Error';
+          msg.className = 'error';
+          return;
+        }
+
+        if (mode === 'login') {
+          showUser(data.user);
+        } else {
+          msg.textContent = '✅ Cuenta creada. Ahora entra.';
+          msg.className = 'success';
+          setMode('login');
+          document.getElementById('form').reset();
+        }
+
+      } catch (err) {
+        msg.textContent = '❌ No se pudo conectar al servidor';
+        msg.className = 'error';
+      }
+    }
+
+    function showUser(user) {
+      const card = document.getElementById('authCard');
+      card.innerHTML = `
+        <div class="user-card">
+          <h2>👋 Hola, ${user.nombre}</h2>
+          <p>${user.correo}</p>
+          <button class="logout-btn" onclick="location.reload()">Cerrar sesión</button>
+        </div>
+      `;
+    }
+  </script>
+
+</body>
+</html>
