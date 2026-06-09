@@ -3,6 +3,7 @@ export interface User {
     email: string;
     nombre: string;
     moneda_principal: string;
+    avatar_color?: string;
     created_at: string;
     updated_at: string;
 }

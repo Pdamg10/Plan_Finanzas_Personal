@@ -21,7 +21,7 @@ export class Category {
   @ManyToOne(() => User, (user) => user.id)
   user: User;
 
-  @Column()
+  @Column({ nullable: true })
   userId: string;
   
   @Column({ default: false })

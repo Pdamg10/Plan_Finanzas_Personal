@@ -14,11 +14,14 @@ export class User {
   @Column()
   nombre: string;
 
-  @Column()
+  @Column({ nullable: true })
   apellido: string;
 
   @Column({ default: 'USD' })
   moneda_principal: string;
+
+  @Column({ default: 'violet' })
+  avatar_color: string;
 
   @CreateDateColumn()
   created_at: Date;
@@ -26,3 +29,4 @@ export class User {
   @UpdateDateColumn()
   updated_at: Date;
 }
+

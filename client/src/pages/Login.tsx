@@ -1,14 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Lock, Mail, Chrome } from 'lucide-react';
+import { User, Lock, Mail } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,7 +15,7 @@ export default function Login() {
     setError('');
 
     try {
-      const res = await fetch('http://127.0.0.1:3000/auth/login', {
+      const res = await fetch('http://localhost:3000/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -26,108 +24,90 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Error al iniciar sesión');
+        throw new Error(data.message || 'Credenciales incorrectas');
       }
 
       login(data.token, data.user);
-      navigate('/');
-    } catch (err: any) {
-      console.error(err);
-      if (err.message === 'Failed to fetch') {
-         setError('No se pudo conectar con el servidor. Asegúrate de que el backend esté corriendo.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'Failed to fetch') {
+        setError('No se pudo conectar con el servidor. Verifica que el servidor esté activo.');
       } else {
-         setError(err.message || 'Ocurrió un error inesperado');
+        setError(msg || 'Ocurrió un error inesperado');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-600 to-blue-500 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-      <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-      <div className="absolute -bottom-32 left-20 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
 
-      <div className="bg-white/90 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl w-full max-w-[400px] relative z-10 mx-4">
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden text-[var(--ink)]">
+      {/* Background blobs to match site aesthetics */}
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-purple-400/20 rounded-full filter blur-3xl animate-blob"></div>
+      <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-blue-400/20 rounded-full filter blur-3xl animate-blob animation-delay-2000"></div>
+      <div className="absolute -bottom-32 left-20 w-96 h-96 bg-pink-400/20 rounded-full filter blur-3xl animate-blob animation-delay-4000"></div>
+
+      <div className="card w-full max-w-[400px] p-8 mx-4 z-10 !rounded-[24px] shadow-[var(--shadow)] bg-white/45 border border-white/80 backdrop-blur-[24px]">
+        
+        {/* Title */}
         <div className="flex flex-col items-center mb-8">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-pink-400 to-violet-600 p-1 mb-4 shadow-lg shadow-violet-500/30">
-                <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                    <User size={40} className="text-violet-500" />
-                </div>
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-pink-400 to-violet-600 p-0.5 mb-4 shadow-lg shadow-violet-500/20 flex items-center justify-center">
+            <div className="w-full h-full rounded-[14px] bg-white/90 flex items-center justify-center">
+              <User size={32} className="text-violet-500" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-800">Iniciar Sesión</h1>
+          </div>
+          <h1 className="text-2xl font-black text-[var(--ink)] tracking-tight">FinFlow</h1>
+          <p className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--text2)] mt-0.5">Soporte de Decisiones Financieras</p>
         </div>
 
         {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-500 text-sm font-medium text-center border border-red-100">
-                {error}
-            </div>
+          <div className="mb-4 p-3 rounded-xl bg-red-100/60 border border-red-200 text-red-700 text-xs font-bold text-center">
+            {error}
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <div className="flex justify-between items-center mb-1 px-1">
-                <label className="text-sm font-bold text-slate-700">Correo Electrónico</label>
-                <a href="#" className="text-xs font-semibold text-violet-600 hover:text-violet-700">¿Olvidaste tu contraseña?</a>
-            </div>
-            <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors" size={20} />
-                <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none transition-all font-medium text-slate-700 placeholder:text-slate-400"
-                    placeholder="Ingresa tu correo"
-                    required
-                />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="field">
+            <label className="text-xs font-bold text-[var(--text2)] pl-1">Correo Electrónico</label>
+            <div className="relative mt-1">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-11 pr-4 py-2.5 rounded-[12px] border border-white/60 bg-white/35 focus:bg-white/60 focus:border-violet-500 outline-none transition-all font-bold text-xs text-slate-700 placeholder:text-slate-400"
+                placeholder="correo@ejemplo.com"
+                required
+              />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1 px-1">Contraseña</label>
-            <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors" size={20} />
-                <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none transition-all font-medium text-slate-700 placeholder:text-slate-400"
-                    placeholder="Ingresa tu contraseña"
-                    required
-                />
+          <div className="field">
+            <label className="text-xs font-bold text-[var(--text2)] pl-1">Contraseña</label>
+            <div className="relative mt-1">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-11 pr-4 py-2.5 rounded-[12px] border border-white/60 bg-white/35 focus:bg-white/60 focus:border-violet-500 outline-none transition-all font-bold text-xs text-slate-700 placeholder:text-slate-400"
+                placeholder="••••••••"
+                required
+              />
             </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-600 text-white font-bold text-lg shadow-xl shadow-violet-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70"
+            className="btn btn-primary !w-full py-3 mt-4 text-xs font-bold rounded-[12px] flex justify-center items-center gap-1.5"
           >
-            {isLoading ? 'Iniciando...' : 'Entrar'}
+            {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
           </button>
         </form>
 
-        <div className="mt-8">
-            <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-slate-500 font-medium z-10">o continuar con</span>
-                <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200"></div>
-                </div>
-            </div>
 
-            <div className="mt-6 flex justify-center gap-4">
-                <button className="w-14 h-14 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
-                    <Chrome size={24} className="text-slate-700" />
-                </button>
-            </div>
-        </div>
-        
-        <p className="mt-8 text-center text-slate-600">
-            ¿No tienes cuenta?{' '}
-            <a href="#" className="font-bold text-violet-600 hover:text-violet-700 hover:underline">Regístrate &gt;</a>
-        </p>
       </div>
     </div>
   );

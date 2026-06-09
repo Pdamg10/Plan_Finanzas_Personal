@@ -1,187 +1,201 @@
-import { useData, CAT_META } from '../context/DataContext';
-import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useDecisionSupport } from '../context/DecisionSupportContext';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
+import { SemaforoWidget } from '../components/decision-support/SemaforoWidget';
+import { CepalMetricsCard } from '../components/decision-support/CepalMetricsCard';
+import { BudgetCategoryList } from '../components/decision-support/BudgetCategoryList';
+import { BookOpen } from 'lucide-react';
 
 export default function Dashboard() {
-  const { transactions, accounts, fmt, fmtShort } = useData();
+  const { result, gastosFijos, comprasCanasta, ingresoNeto } = useDecisionSupport();
 
-  const now = new Date();
-  const currentMonthTxs = transactions.filter(t => {
-    const d = new Date(t.date);
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-  });
+  const getCategoryDataList = () => {
+    const defaultMapping: Record<number, string> = {
+      1: 'Alimentación',
+      2: 'Vivienda y Servicios Públicos',
+      3: 'Salud',
+      4: 'Educación',
+      5: 'Vestido y Calzado',
+      6: 'Artículos de Higiene Personal y Limpieza del Hogar',
+      7: 'Transporte'
+    };
 
-  const inc = currentMonthTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const exp = currentMonthTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  const sav = accounts.reduce((s, a) => s + a.balance, 0);
+    const records: Record<string, { id: number, nombre: string, monto: number, esEstatica: boolean }> = {
+      'Alimentación': { id: 1, nombre: 'Alimentación', monto: result?.costoCanastaAlimentaria || 0, esEstatica: true },
+      'Vivienda y Servicios Públicos': { id: 2, nombre: 'Vivienda y Servicios Públicos', monto: 0, esEstatica: true },
+      'Salud': { id: 3, nombre: 'Salud', monto: 0, esEstatica: true },
+      'Educación': { id: 4, nombre: 'Educación', monto: 0, esEstatica: true },
+      'Vestido y Calzado': { id: 5, nombre: 'Vestido y Calzado', monto: 0, esEstatica: true },
+      'Artículos de Higiene Personal y Limpieza del Hogar': { id: 6, nombre: 'Artículos de Higiene Personal y Limpieza del Hogar', monto: 0, esEstatica: true },
+      'Transporte': { id: 7, nombre: 'Transporte', monto: 0, esEstatica: true }
+    };
 
-  const getAccountName = (id: string) => {
-    const a = accounts.find(a => a.id === id);
-    return a ? a.name : '—';
+    if (!result) {
+      records['Alimentación'].monto = comprasCanasta.reduce((sum, item) => sum + (item.cantidad * item.precioUnitario), 0);
+    }
+
+    gastosFijos.forEach((g) => {
+      if (g.esEstatica && g.categoriaId) {
+        const catName = defaultMapping[g.categoriaId];
+        if (catName && records[catName]) {
+          records[catName].monto += g.monto;
+        }
+      } else {
+        records[g.nombre] = { id: Math.random(), nombre: g.nombre, monto: g.monto, esEstatica: false };
+      }
+    });
+
+    return Object.values(records);
   };
 
-  const chartData = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthName = d.toLocaleDateString('es-ES', { month: 'short' });
-    const monthTxs = transactions.filter(t => {
-      const td = new Date(t.date);
-      return td.getMonth() === d.getMonth() && td.getFullYear() === d.getFullYear();
-    });
-    const mInc = monthTxs.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-    const mExp = monthTxs.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
-    chartData.push({ name: i === 0 ? 'Actual' : monthName, inc: mInc, exp: mExp });
-  }
+  const categories = getCategoryDataList();
+  
+  // Format data for Donut Chart
+  const chartData = categories
+    .filter(c => c.monto > 0)
+    .map(c => ({
+      name: c.nombre,
+      value: c.monto,
+      esEstatica: c.esEstatica
+    }));
 
-  const catMap: Record<string, number> = {};
-  currentMonthTxs.filter(t => t.type === 'expense').forEach(t => {
-    const cat = CAT_META[t.category]?.label || 'General';
-    catMap[cat] = (catMap[cat] || 0) + t.amount;
-  });
-  const categoryData = Object.keys(catMap).map(k => ({ name: k, value: catMap[k] })).sort((a, b) => b.value - a.value);
+  const COLORS = {
+    'Alimentación': '#e74c3c',
+    'Vivienda y Servicios Públicos': '#3498db',
+    'Salud': '#2ecc71',
+    'Educación': '#9b59b6',
+    'Vestido y Calzado': '#e67e22',
+    'Artículos de Higiene Personal y Limpieza del Hogar': '#1abc9c',
+    'Transporte': '#f1c40f',
+  };
 
-  const COLORS = ['#8b5cf6', '#ec4899', '#60a5fa', '#34d399', '#fb923c', '#a5b4fc', '#f472b6'];
+  const getCellColor = (name: string, index: number) => {
+    return COLORS[name as keyof typeof COLORS] || `hsl(${(index * 45) % 360}, 65%, 60%)`;
+  };
+
+  const fmt = (n: number) => '$' + Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtShort = (n: number) => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : n.toFixed(0);
 
   return (
-    <div className="page active">
+    <div className="page active space-y-6">
+      
       {/* Welcome bar */}
       <div className="welcome">
         <div className="welcome-text">
-          <h2>¡Bienvenido! 👋</h2>
-          <p>Aquí está el resumen de tus finanzas de este mes</p>
+          <h2>Resumen Financiero 👋</h2>
+          <p className="text-xs text-slate-500 font-semibold mt-1">
+            Visualización general del estado financiero basado en metodologías CEPAL y CENDAS
+          </p>
         </div>
         <div className="welcome-badges">
           <div className="wb">
-            <div className="wb-val">${fmtShort(inc)}</div>
-            <div className="wb-lbl">Ingresos</div>
+            <div className="wb-val">${fmtShort(ingresoNeto)}</div>
+            <div className="wb-lbl">Ingresos IMN</div>
           </div>
           <div className="wb">
-            <div className="wb-val" style={{ color: 'var(--pink)' }}>${fmtShort(exp)}</div>
-            <div className="wb-lbl">Gastos</div>
+            <div className="wb-val animate-pulse" style={{ color: 'var(--red)' }}>
+              ${fmtShort(result?.costoCanastaAlimentaria || 0)}
+            </div>
+            <div className="wb-lbl">Alimentos</div>
           </div>
           <div className="wb">
-            <div className="wb-val" style={{ color: 'var(--blue-deep)' }}>${fmtShort(inc - exp)}</div>
-            <div className="wb-lbl">Balance</div>
+            <div className="wb-val" style={{ color: 'var(--purple)' }}>
+              ${fmtShort(result?.ahorroObligatorioDescontado || 0)}
+            </div>
+            <div className="wb-lbl">Ahorro Previo</div>
           </div>
         </div>
       </div>
 
-      <div className="stats-grid">
-        <div className="stat-card income">
-          <div className="stat-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-          </div>
-          <div className="stat-lbl">Ingresos del mes</div>
-          <div className="stat-val">{fmt(inc)}</div>
-          <div className="stat-sub">↑ este mes</div>
-        </div>
-        <div className="stat-card expense">
-          <div className="stat-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-          </div>
-          <div className="stat-lbl">Gastos del mes</div>
-          <div className="stat-val">{fmt(exp)}</div>
-          <div className="stat-sub">↓ este mes</div>
-        </div>
-        <div className="stat-card balance">
-          <div className="stat-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          </div>
-          <div className="stat-lbl">Balance neto</div>
-          <div className="stat-val">{fmt(inc - exp)}</div>
-          <div className="stat-sub">ingreso − gasto</div>
-        </div>
-        <div className="stat-card savings">
-          <div className="stat-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          </div>
-          <div className="stat-lbl">Total patrimonio</div>
-          <div className="stat-val">{fmt(sav)}</div>
-          <div className="stat-sub">todas las cuentas</div>
-        </div>
-      </div>
+      {result ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Left Column: Diagnostics (7 cols) */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Semaphore Widget */}
+            <SemaforoWidget
+              estado={result.estadoSemaforo}
+              explicacion={result.explicacionSemaforo}
+              presupuestoRestante={result.presupuestoDisponibleRestante}
+            />
 
-      <div className="grid-main mb-3">
-        {/* Bar chart */}
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">📊 Actividad Semanal — Últimos 6 meses</span>
-          </div>
-          <div className="card-body">
-            <div style={{ width: '100%', height: '200px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <XAxis dataKey="name" stroke="var(--muted)" fontSize={10} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: '12px', border: '1px solid var(--glass-border)' }} formatter={(value: number) => fmt(value)} />
-                  <Line type="monotone" dataKey="inc" name="Ingresos" stroke="var(--purple)" strokeWidth={3} dot={{r: 0}} activeDot={{r: 6, fill: 'var(--purple)'}} />
-                  <Line type="monotone" dataKey="exp" name="Gastos" stroke="var(--pink)" strokeWidth={3} dot={{r: 0}} activeDot={{r: 6, fill: 'var(--pink)'}} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-        {/* Donut */}
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">🎯 Habilidades de Gasto</span>
-          </div>
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: '100%', height: '150px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={categoryData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} dataKey="value">
-                    {categoryData.map((_entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: '12px', border: '1px solid var(--glass-border)' }} formatter={(value: number) => fmt(value)} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="w-full mt-2 flex flex-col gap-2 max-h-[80px] overflow-y-auto pr-2" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-              {categoryData.map((cat, i) => (
-                <div key={cat.name} className="flex justify-between items-center text-[0.77rem]" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.77rem' }}>
-                  <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, color: 'var(--ink)' }}>
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: COLORS[i % COLORS.length] }}></span>
-                    {cat.name}
-                  </div>
-                  <span className="font-bold text-muted" style={{ fontWeight: 700, color: 'var(--muted)' }}>{fmtShort(cat.value)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+            {/* CEPAL Metrics */}
+            <CepalMetricsCard
+              indice={result.indiceVulnerabilidadCepal}
+              clasificacion={result.clasificacionCepal}
+              costoCanasta={result.costoCanastaAlimentaria}
+              indiceEsfuerzoLaboral={result.indiceEsfuerzoLaboral}
+            />
 
-      <div className="card mb-3">
-        <div className="card-header">
-          <span className="card-title">🕐 Transacciones Recientes</span>
-        </div>
-        <div className="card-body">
-          <div className="tx-list">
-            {transactions.length === 0 ? (
-              <div className="empty">
-                <div className="empty-icon">💸</div>
-                <h3>Sin transacciones</h3>
-                <p>Agrega una para empezar</p>
+          </div>
+
+          {/* Right Column: Donut Chart & Category breakdown (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
+            
+            <div className="card">
+              <div className="card-header">
+                <span className="card-title flex items-center gap-1.5">
+                  <BookOpen size={16} className="text-[var(--purple)]" />
+                  Distribución del Presupuesto
+                </span>
               </div>
-            ) : (
-              transactions.slice(0, 5).map(t => {
-                const meta = CAT_META[t.category] || { emoji: '📦', label: 'Otros', color: '#cbd5e1' };
-                const sign = t.type === 'income' ? '+' : '-';
-                const dateStr = new Date(t.date + 'T00:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-                return (
-                  <div key={t.id} className="tx-item">
-                    <div className="tx-icon" style={{ background: `${meta.color}28` }}>{meta.emoji}</div>
-                    <div className="tx-info">
-                      <div className="tx-name">{t.desc}</div>
-                      <div className="tx-meta">{meta.label} · {dateStr} · {getAccountName(t.account)}</div>
+              <div className="card-body flex flex-col items-center">
+                {chartData.length > 0 ? (
+                  <>
+                    <div style={{ width: '100%', height: '170px' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie 
+                            data={chartData} 
+                            cx="50%" 
+                            cy="50%" 
+                            innerRadius={40} 
+                            outerRadius={70} 
+                            paddingAngle={3} 
+                            dataKey="value"
+                          >
+                            {chartData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={getCellColor(entry.name, index)} 
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: 'rgba(255,255,255,0.9)', 
+                              borderRadius: '12px', 
+                              border: '1px solid var(--glass-border)',
+                              fontSize: '11px',
+                              fontWeight: 'bold'
+                            }} 
+                            formatter={(value: number) => fmt(value)} 
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
-                    <div className={`tx-amt ${t.type === 'income' ? 'in' : 'out'}`}>{sign}{fmt(t.amount)}</div>
+
+                    <div className="w-full mt-4">
+                      <BudgetCategoryList categorias={categories} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center text-slate-400 py-8 text-xs font-semibold">
+                    No hay gastos o consumos registrados para mostrar la distribución.
                   </div>
-                );
-              })
-            )}
+                )}
+              </div>
+            </div>
+
           </div>
+
         </div>
-      </div>
+      ) : (
+        <div className="card py-12 text-center text-slate-500">
+          <p className="text-xs font-bold text-[var(--ink)]">Cargando diagnósticos financieros...</p>
+        </div>
+      )}
+
     </div>
   );
 }

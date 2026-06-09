@@ -11,6 +11,7 @@ import { GoalsModule } from './goals/goals.module';
 import { RecurringModule } from './recurring/recurring.module';
 import { ReportsModule } from './reports/reports.module';
 import { RemindersModule } from './reminders/reminders.module';
+import { DecisionSupportModule } from './decision-support/decision-support.module';
 
 @Module({
   imports: [
@@ -35,8 +36,10 @@ import { RemindersModule } from './reminders/reminders.module';
     RecurringModule,
     ReportsModule,
     RemindersModule,
+    DecisionSupportModule,
   ],
   controllers: [],
   providers: [],
 })
 export class AppModule {}
+

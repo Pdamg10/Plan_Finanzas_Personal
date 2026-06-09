@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types';
 
@@ -6,6 +6,7 @@ interface AuthContextType {
     user: User | null;
     login: (token: string, user: User) => void;
     logout: () => void;
+    updateUser: (updated: Partial<User>) => void;
     isAuthenticated: boolean;
     loading: boolean;
 }
@@ -13,24 +14,49 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    // Modo plantilla: siempre autenticado con usuario de demostración
-    const [user] = useState<User>({
-        id: '1',
-        nombre: 'Usuario Demo',
-        email: 'demo@finflow.app',
-        moneda_principal: 'USD',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    });
+    const [user, setUser] = useState<User | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
 
-    const login = () => {};
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        if (token && storedUser) {
+            try {
+                setUser(JSON.parse(storedUser));
+                setIsAuthenticated(true);
+            } catch (e) {
+                console.error('Error parsing stored user data', e);
+            }
+        }
+        setLoading(false);
+    }, []);
+
+    const login = (token: string, userData: User) => {
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        setIsAuthenticated(true);
+    };
+
     const logout = () => {
-        // En modo plantilla no hace nada
-        console.log("Logout presionado - modo plantilla");
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setIsAuthenticated(false);
+    };
+
+    const updateUser = (updated: Partial<User>) => {
+        setUser(prev => {
+            if (!prev) return prev;
+            const merged = { ...prev, ...updated };
+            localStorage.setItem('user', JSON.stringify(merged));
+            return merged;
+        });
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: true, loading: false }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser, isAuthenticated, loading }}>
             {children}
         </AuthContext.Provider>
     );

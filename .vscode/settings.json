@@ -1,3 +1,8 @@
 {
-    "css.lint.unknownAtRules": "ignore"
-}
+    "css.lint.unknownAtRules": "ignore",
+    "i18n-ally.enabled": false,
+    "i18n-ally.enabledParsers": [],
+    "eslint.rules.customizations": [
+        { "rule": "i18n-text/no-en", "severity": "off" }
+    ]
+}
