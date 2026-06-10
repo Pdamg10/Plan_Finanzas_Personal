@@ -22,7 +22,7 @@ export default function Goals() {
 
   const fetchGoals = async () => {
     try {
-        const res = await fetch('http://localhost:3000/goals');
+        const res = await fetch('/api/goals');
         const data = await res.json();
         setGoals(data);
     } catch (error) {
@@ -36,8 +36,8 @@ export default function Goals() {
       e.preventDefault();
       try {
           const url = editingId 
-              ? `http://localhost:3000/goals/${editingId}` 
-              : 'http://localhost:3000/goals';
+              ? `/api/goals/${editingId}` 
+              : '/api/goals';
           const method = editingId ? 'PUT' : 'POST';
 
           const res = await fetch(url, {
@@ -63,7 +63,7 @@ export default function Goals() {
   const handleDelete = async (id: number) => {
       if (!confirm('¿Eliminar esta meta?')) return;
       try {
-          await fetch(`http://localhost:3000/goals/${id}`, { method: 'DELETE' });
+          await fetch(`/api/goals/${id}`, { method: 'DELETE' });
           setGoals(goals.filter(g => g.id !== id));
       } catch (error) {
           console.error("Error deleting goal", error);

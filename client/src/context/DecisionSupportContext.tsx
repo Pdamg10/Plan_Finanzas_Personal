@@ -64,6 +64,7 @@ interface DecisionSupportContextType {
   removeFixedExpense: (index: number) => void;
   addToBasket: (productId: number, qty: number, price: number) => void;
   removeFromBasket: (productId: number) => void;
+  addCustomProduct: (prod: Omit<Product, 'id'>) => void;
 }
 
 const FALLBACK_PRODUCTS: Product[] = [
@@ -79,6 +80,7 @@ const FALLBACK_PRODUCTS: Product[] = [
 
 const DecisionSupportContext = createContext<DecisionSupportContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useDecisionSupport() {
   const context = useContext(DecisionSupportContext);
   if (!context) throw new Error('useDecisionSupport must be used within a DecisionSupportProvider');
@@ -111,8 +113,8 @@ export function DecisionSupportProvider({ children }: { children: ReactNode }) {
     const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
 
     Promise.all([
-      fetch('http://localhost:3000/decision-support/products').then(res => res.ok ? res.json() : Promise.reject()),
-      fetch('http://localhost:3000/categories', { headers }).then(res => res.ok ? res.json() : Promise.reject())
+      fetch('/api/decision-support/products').then(res => res.ok ? res.json() : Promise.reject()),
+      fetch('/api/categories', { headers }).then(res => res.ok ? res.json() : Promise.reject())
     ]).then(([prods]) => {
       if (Array.isArray(prods) && prods.length > 0) {
         setProducts(prods);
@@ -176,7 +178,7 @@ export function DecisionSupportProvider({ children }: { children: ReactNode }) {
     };
 
     try {
-      const res = await fetch('http://localhost:3000/decision-support/evaluate', {
+      const res = await fetch('/api/decision-support/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -188,7 +190,7 @@ export function DecisionSupportProvider({ children }: { children: ReactNode }) {
       } else {
         calculateFallback(payload);
       }
-    } catch (e) {
+    } catch {
       calculateFallback(payload);
     } finally {
       setCalculating(false);
@@ -285,6 +287,7 @@ export function DecisionSupportProvider({ children }: { children: ReactNode }) {
     if (!loadingProducts) {
       handleEvaluate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingProducts, ingresoNeto, porcentajeAhorro, gastosFijos, comprasCanasta]);
 
   const addFixedExpense = (nombre: string, monto: number) => {
@@ -327,6 +330,14 @@ export function DecisionSupportProvider({ children }: { children: ReactNode }) {
     setComprasCanasta(prev => prev.filter(c => c.productoId !== productId));
   };
 
+  const addCustomProduct = (prod: Omit<Product, 'id'>) => {
+    const newProduct: Product = {
+      ...prod,
+      id: Date.now()
+    };
+    setProducts(prev => [...prev, newProduct]);
+  };
+
   return (
     <DecisionSupportContext.Provider value={{
       products,
@@ -346,6 +357,7 @@ export function DecisionSupportProvider({ children }: { children: ReactNode }) {
       removeFixedExpense,
       addToBasket,
       removeFromBasket,
+      addCustomProduct,
     }}>
       {children}
     </DecisionSupportContext.Provider>

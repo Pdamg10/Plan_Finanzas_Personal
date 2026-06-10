@@ -20,7 +20,7 @@ export default function Reminders() {
 
   const fetchReminders = async () => {
     try {
-        const res = await fetch('http://localhost:3000/reminders');
+        const res = await fetch('/api/reminders');
         const data = await res.json();
         setReminders(data);
     } catch (error) {
@@ -33,7 +33,7 @@ export default function Reminders() {
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-          const res = await fetch('http://localhost:3000/reminders', {
+          const res = await fetch('/api/reminders', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(formData)
@@ -56,12 +56,12 @@ export default function Reminders() {
 
   const handleDelete = async (id: number) => {
       if(!confirm('¿Borrar recordatorio?')) return;
-      await fetch(`http://localhost:3000/reminders/${id}`, { method: 'DELETE' });
+      await fetch(`/api/reminders/${id}`, { method: 'DELETE' });
       setReminders(reminders.filter(r => r.id !== id));
   };
 
   const handleMarkAsRead = async (id: number) => {
-      await fetch(`http://localhost:3000/reminders/${id}/read`, { method: 'PUT' });
+      await fetch(`/api/reminders/${id}/read`, { method: 'PUT' });
       setReminders(reminders.map(r => r.id === id ? { ...r, is_read: true } : r));
   };
 

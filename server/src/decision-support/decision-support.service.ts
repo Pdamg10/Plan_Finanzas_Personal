@@ -286,9 +286,9 @@ export class DecisionSupportService implements OnModuleInit {
       explicacionSemaforo = `¡Felicidades! Tu estructura financiera es sostenible. Tienes un excedente de $${excedente.toFixed(2)} que puedes destinar a inversión o fondos de emergencia corporativos.`;
     }
 
-    // 7. Algoritmo de Sustitución Microeconómica por Inflación (Margen > 15% vs CENDAS)
+    // 7. Algoritmo de Sustitución Microeconómica por Inflación (Margen > 0% vs CENDAS)
     const sustitucionesSugeridas = [];
-    const MARGEN_INFLACION_UMBRAL = 15.0; // 15%
+    const MARGEN_INFLACION_UMBRAL = 0.0; // 0%
 
     for (const item of comprasProcesadas) {
       if (!item.meta) continue;

@@ -85,15 +85,18 @@ export default function Planning() {
   const [nuevoGastoMonto, setNuevoGastoMonto] = useState('');
 
   const [comprasCanasta, setComprasCanasta] = useState<ProductPurchase[]>([
-    { productoId: 1, nombre: 'Carne de Res (Corte de Primera)', cantidad: 6, precioUnitario: 10.50 },
-    { productoId: 2, nombre: 'Pollo Entero', cantidad: 12, precioUnitario: 3.30 },
-    { productoId: 4, nombre: 'Leche Líquida Completa', cantidad: 15, precioUnitario: 1.45 },
-    { productoId: 5, nombre: 'Harina de Maíz Precocida', cantidad: 8, precioUnitario: 1.15 },
+    { productoId: 1, nombre: 'Harina de maíz precocida', cantidad: 8, precioUnitario: 1.20 },
+    { productoId: 2, nombre: 'Carne de res de primera (Bisteck)', cantidad: 6, precioUnitario: 10.50 },
+    { productoId: 6, nombre: 'Queso blanco duro (Llanero)', cantidad: 4, precioUnitario: 7.00 },
+    { productoId: 5, nombre: 'Leche líquida pasteurizada', cantidad: 15, precioUnitario: 1.45 },
   ]);
 
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [purchaseQty, setPurchaseQty] = useState<string>('1');
   const [purchasePrice, setPurchasePrice] = useState<string>('');
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchCategory, setSearchCategory] = useState('');
 
   const [result, setResult] = useState<DiagnosticResult | null>(null);
 
@@ -102,8 +105,8 @@ export default function Planning() {
     const headers: HeadersInit = token ? { 'Authorization': `Bearer ${token}` } : {};
 
     Promise.all([
-      fetch('http://localhost:3000/decision-support/products').then(res => res.ok ? res.json() : Promise.reject()),
-      fetch('http://localhost:3000/categories', { headers }).then(res => res.ok ? res.json() : Promise.reject())
+      fetch('/api/decision-support/products').then(res => res.ok ? res.json() : Promise.reject()),
+      fetch('/api/categories', { headers }).then(res => res.ok ? res.json() : Promise.reject())
     ]).then(([prods]) => {
       if (Array.isArray(prods) && prods.length > 0) {
         setProducts(prods);
@@ -113,11 +116,11 @@ export default function Planning() {
         const findProd = (name: string) => prods.find(p => p.nombre.toLowerCase().includes(name.toLowerCase()));
         const defaultBasket = [];
         const harina = findProd('harina de maíz precocida');
-        if (harina) defaultBasket.push({ productoId: harina.id, nombre: harina.nombre, cantidad: 8, precioUnitario: 1.15 });
+        if (harina) defaultBasket.push({ productoId: harina.id, nombre: harina.nombre, cantidad: 8, precioUnitario: 1.20 });
         const carne = findProd('carne de res de primera');
         if (carne) defaultBasket.push({ productoId: carne.id, nombre: carne.nombre, cantidad: 6, precioUnitario: 10.50 });
-        const pollo = findProd('pollo entero');
-        if (pollo) defaultBasket.push({ productoId: pollo.id, nombre: pollo.nombre, cantidad: 12, precioUnitario: 3.30 });
+        const queso = findProd('queso blanco duro');
+        if (queso) defaultBasket.push({ productoId: queso.id, nombre: queso.nombre, cantidad: 4, precioUnitario: 7.00 });
         const leche = findProd('leche líquida pasteurizada');
         if (leche) defaultBasket.push({ productoId: leche.id, nombre: leche.nombre, cantidad: 15, precioUnitario: 1.45 });
 
@@ -138,11 +141,11 @@ export default function Planning() {
       const findProd = (name: string) => FALLBACK_PRODUCTS.find(p => p.nombre.toLowerCase().includes(name.toLowerCase()));
       const defaultBasket = [];
       const harina = findProd('harina de maíz');
-      if (harina) defaultBasket.push({ productoId: harina.id, nombre: harina.nombre, cantidad: 8, precioUnitario: 1.15 });
+      if (harina) defaultBasket.push({ productoId: harina.id, nombre: harina.nombre, cantidad: 8, precioUnitario: 1.20 });
       const carne = findProd('carne de res');
       if (carne) defaultBasket.push({ productoId: carne.id, nombre: carne.nombre, cantidad: 6, precioUnitario: 10.50 });
-      const pollo = findProd('pollo entero');
-      if (pollo) defaultBasket.push({ productoId: pollo.id, nombre: pollo.nombre, cantidad: 12, precioUnitario: 3.30 });
+      const queso = findProd('queso blanco duro');
+      if (queso) defaultBasket.push({ productoId: queso.id, nombre: queso.nombre, cantidad: 4, precioUnitario: 7.00 });
       const leche = findProd('leche líquida');
       if (leche) defaultBasket.push({ productoId: leche.id, nombre: leche.nombre, cantidad: 15, precioUnitario: 1.45 });
 
@@ -181,7 +184,7 @@ export default function Planning() {
     };
 
     try {
-      const res = await fetch('http://localhost:3000/decision-support/evaluate', {
+      const res = await fetch('/api/decision-support/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -193,7 +196,7 @@ export default function Planning() {
       } else {
         calculateFallback(payload);
       }
-    } catch (e) {
+    } catch {
       calculateFallback(payload);
     } finally {
       setCalculating(false);
@@ -242,7 +245,7 @@ export default function Planning() {
       if (!item.meta) continue;
       const ref = item.meta.precio_referencia_cendas;
       const inflacion = ((item.precioUnitario - ref) / ref) * 100;
-      if (inflacion > 15) {
+      if (inflacion > 0) {
         const sustituto = products.find(p => p.grupo_nutricional === item.meta.grupo_nutricional && p.id !== item.meta.id && p.precio_referencia_cendas < ref);
         if (sustituto) {
           sustitucionesSugeridas.push({
@@ -284,6 +287,7 @@ export default function Planning() {
     if (!loadingProducts) {
       handleEvaluate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadingProducts]);
 
   const addFixedExpense = () => {
@@ -365,6 +369,19 @@ export default function Planning() {
     });
 
     return Object.values(records);
+  };
+
+  const uniqueCategories = Array.from(new Set(products.map(p => p.grupo_nutricional))).sort();
+  const filteredProducts = products.filter(p => {
+    const matchesName = p.nombre.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = searchCategory ? p.grupo_nutricional === searchCategory : true;
+    return matchesName && matchesCategory;
+  });
+
+  const handleSelectProduct = (prod: Product) => {
+    setSelectedProductId(String(prod.id));
+    setPurchasePrice(String(prod.precio_referencia_cendas));
+    setPurchaseQty('1');
   };
 
   if (loadingProducts) {
@@ -519,89 +536,136 @@ export default function Planning() {
                 3. Canasta Básica Alimentaria Real
               </span>
             </div>
-            <div className="card-body space-y-4">
+            <div className="card-body space-y-6">
               
-              {/* Simulator selection */}
+              {/* Buscador y Selección de Producto */}
               <div className="bg-white/45 p-4 rounded-[16px] border border-white/60 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  <div className="md:col-span-6 field">
-                    <label className="!text-[8px]">Seleccionar Producto CENDAS</label>
-                    <select
-                      value={selectedProductId}
-                      onChange={(e) => setSelectedProductId(e.target.value)}
-                      className="!py-1.5 !text-xs"
-                    >
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.nombre} ({p.unidad_medida})
-                        </option>
-                      ))}
+                <h3 className="font-bold text-sm text-[var(--ink)] flex items-center gap-2">
+                  <BookOpen size={16} className="text-[var(--purple)]" />
+                  Buscador de Productos CENDAS
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="field">
+                    <input 
+                       type="text" 
+                       placeholder="Buscar producto por nombre..." 
+                       value={searchQuery}
+                       onChange={e => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <div className="field">
+                    <select value={searchCategory} onChange={e => setSearchCategory(e.target.value)}>
+                      <option value="">Todas las categorías</option>
+                      {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
-                  </div>
-
-                  <div className="md:col-span-3 field">
-                    <label className="!text-[8px]">Cantidad</label>
-                    <input
-                      type="number"
-                      value={purchaseQty}
-                      onChange={(e) => setPurchaseQty(e.target.value)}
-                      className="!py-1.5 !text-xs font-mono"
-                    />
-                  </div>
-
-                  <div className="md:col-span-3 field">
-                    <label className="!text-[8px]">Precio Pagado ($)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={purchasePrice}
-                      onChange={(e) => setPurchasePrice(e.target.value)}
-                      className="!py-1.5 !text-xs font-mono"
-                    />
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={addToBasket}
-                  className="btn btn-primary btn-sm !w-full flex justify-center items-center gap-1"
-                >
-                  <Plus size={14} /> Añadir a Canasta Real
-                </button>
-              </div>
-
-              {/* List items currently in food basket */}
-              <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
-                {comprasCanasta.map((c) => {
-                  const reference = products.find(p => p.id === c.productoId)?.precio_referencia_cendas || c.precioUnitario;
-                  const priceDelta = ((c.precioUnitario - reference) / reference) * 100;
-                  
-                  return (
-                    <div key={c.productoId} className="p-2.5 rounded-[12px] bg-white/45 border border-white/60 flex justify-between items-center text-xs">
-                      <div className="space-y-1">
-                        <p className="font-bold text-[var(--ink)]">{c.nombre}</p>
-                        <p className="text-[10px] text-slate-500 font-semibold">
-                          {c.cantidad} uds · ${c.precioUnitario.toFixed(2)} pagado (Ref: ${reference.toFixed(2)})
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="font-mono font-bold text-slate-700">${(c.cantidad * c.precioUnitario).toFixed(2)}</p>
-                          {priceDelta > 15 && (
-                            <span className="badge badge-red !px-1.5 !py-0.25 !text-[7px]">+{priceDelta.toFixed(0)}% infl.</span>
-                          )}
+                {/* Lista de productos filtrados */}
+                <div className="max-h-[180px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {filteredProducts.map(p => (
+                    <div 
+                      key={p.id} 
+                      onClick={() => handleSelectProduct(p)}
+                      className={`p-2.5 rounded-xl border cursor-pointer transition-all ${selectedProductId === String(p.id) ? 'border-[var(--purple)] bg-[var(--purple)]/10' : 'border-white/60 bg-white/30 hover:bg-white/80'}`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-[11px] text-[var(--ink)] leading-tight">{p.nombre}</p>
+                          <p className="text-[9px] text-slate-500 font-semibold mt-0.5">{p.grupo_nutricional} · {p.unidad_medida}</p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFromBasket(c.productoId)}
-                          className="text-red-500 hover:text-red-700 transition-colors p-1"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        <div className="text-right">
+                          <p className="font-mono font-bold text-[11px] text-[var(--purple)]">Ref: ${p.precio_referencia_cendas.toFixed(2)}</p>
+                        </div>
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
+                  {filteredProducts.length === 0 && (
+                    <div className="p-4 text-center text-slate-400 text-xs font-semibold">
+                      No se encontraron productos.
+                    </div>
+                  )}
+                </div>
+
+                {/* Controles de cantidad y precio (solo si hay uno seleccionado) */}
+                {selectedProductId && (
+                  <div className="pt-3 border-t border-white/60 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                    <div className="md:col-span-4 field">
+                      <label className="!text-[9px]">Cantidad</label>
+                      <input 
+                        type="number" 
+                        value={purchaseQty} 
+                        onChange={e => setPurchaseQty(e.target.value)} 
+                        className="font-mono text-center"
+                      />
+                    </div>
+                    <div className="md:col-span-4 field">
+                      <label className="!text-[9px]">Precio Pagado ($)</label>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        value={purchasePrice} 
+                        onChange={e => setPurchasePrice(e.target.value)} 
+                        className="font-mono text-center"
+                      />
+                    </div>
+                    <div className="md:col-span-4">
+                      <button 
+                        type="button"
+                        onClick={addToBasket} 
+                        className="btn btn-primary !w-full flex justify-center items-center gap-1 !py-2.5"
+                      >
+                        <Plus size={14} /> Añadir
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Lista de productos en la canasta */}
+              <div className="pt-2">
+                <h3 className="font-bold text-sm text-[var(--ink)] mb-3 flex items-center justify-between">
+                  Mi Canasta Real
+                  <span className="badge badge-purple">{comprasCanasta.length} items</span>
+                </h3>
+                <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
+                  {comprasCanasta.length === 0 && (
+                    <div className="p-4 text-center text-slate-400 text-xs font-semibold border border-dashed border-slate-300 rounded-xl">
+                      Aún no has agregado productos a tu canasta.
+                    </div>
+                  )}
+                  {comprasCanasta.map((c) => {
+                    const reference = products.find(p => p.id === c.productoId)?.precio_referencia_cendas || c.precioUnitario;
+                    const priceDelta = ((c.precioUnitario - reference) / reference) * 100;
+                    
+                    return (
+                      <div key={c.productoId} className="p-2.5 rounded-[12px] bg-white/45 border border-white/60 flex justify-between items-center text-xs hover:bg-white/60 transition-colors">
+                        <div className="space-y-1">
+                          <p className="font-bold text-[var(--ink)]">{c.nombre}</p>
+                          <p className="text-[10px] text-slate-500 font-semibold">
+                            {c.cantidad} uds · ${c.precioUnitario.toFixed(2)} pagado (Ref: ${reference.toFixed(2)})
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className="font-mono font-bold text-slate-700">${(c.cantidad * c.precioUnitario).toFixed(2)}</p>
+                            {priceDelta > 15 && (
+                              <span className="badge badge-red !px-1.5 !py-0.25 !text-[7px]">+{priceDelta.toFixed(0)}% infl.</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFromBasket(c.productoId)}
+                            className="text-red-500 hover:text-red-700 transition-colors p-1"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

@@ -37,7 +37,7 @@ export const SavingsPrioritizer: React.FC<SavingsPrioritizerProps> = ({
             step="1"
             value={porcentajeAhorro}
             onChange={(e) => onChangePorcentaje(Number(e.target.value))}
-            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[var(--purple)]"
+            className="custom-range mt-2 mb-1"
           />
           <div className="flex justify-between text-[9px] text-[var(--muted)] font-semibold mt-1">
             <span>0% (Sin ahorro)</span>

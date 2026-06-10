@@ -3,7 +3,20 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { SemaforoWidget } from '../components/decision-support/SemaforoWidget';
 import { CepalMetricsCard } from '../components/decision-support/CepalMetricsCard';
 import { BudgetCategoryList } from '../components/decision-support/BudgetCategoryList';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, AlertTriangle } from 'lucide-react';
+
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  if (percent < 0.05) return null;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+  const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+
+  return (
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" style={{ fontSize: '10px', fontWeight: 'bold', textShadow: '0px 1px 2px rgba(0,0,0,0.4)' }}>
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
 
 export default function Dashboard() {
   const { result, gastosFijos, comprasCanasta, ingresoNeto } = useDecisionSupport();
@@ -75,9 +88,24 @@ export default function Dashboard() {
   const fmt = (n: number) => '$' + Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtShort = (n: number) => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : n.toFixed(0);
 
+  const alertasCriticas = result?.sustitucionesSugeridas?.filter(s => s.inflacionRegistrada >= 15) || [];
+
   return (
     <div className="page active space-y-6">
       
+      {/* Alertas No Invasivas (Solo Naranjas y Rojas) */}
+      {alertasCriticas.length > 0 && (
+        <div className="bg-amber-50/80 border border-amber-200/60 rounded-xl p-3 flex items-center gap-3 text-amber-800 text-xs shadow-sm">
+          <div className="bg-amber-100/80 p-1.5 rounded-lg">
+            <AlertTriangle size={16} className="text-amber-600" />
+          </div>
+          <p>
+            El sistema detectó <strong>{alertasCriticas.length} alertas de inflación moderada/alta</strong> en tu canasta básica. 
+            Te sugerimos visitar la sección de <strong>Sustituciones</strong> para ver opciones de ahorro.
+          </p>
+        </div>
+      )}
+
       {/* Welcome bar */}
       <div className="welcome">
         <div className="welcome-text">
@@ -153,6 +181,8 @@ export default function Dashboard() {
                             outerRadius={70} 
                             paddingAngle={3} 
                             dataKey="value"
+                            labelLine={false}
+                            label={renderCustomizedLabel}
                           >
                             {chartData.map((entry, index) => (
                               <Cell 

@@ -20,9 +20,9 @@ export default function Budgets() {
 
   useEffect(() => {
     Promise.all([
-        fetch('http://localhost:3000/budgets').then(res => res.json()),
-        fetch('http://localhost:3000/categories').then(res => res.json()),
-        fetch('http://localhost:3000/transactions').then(res => res.json())
+        fetch('/api/budgets').then(res => res.json()),
+        fetch('/api/categories').then(res => res.json()),
+        fetch('/api/transactions').then(res => res.json())
     ]).then(([buds, cats, trxs]) => {
         setBudgets(buds);
         setCategories(cats);
@@ -57,8 +57,8 @@ export default function Budgets() {
       e.preventDefault();
       try {
           const url = editingId 
-              ? `http://localhost:3000/budgets/${editingId}` 
-              : 'http://localhost:3000/budgets';
+              ? `/api/budgets/${editingId}` 
+              : '/api/budgets';
           const method = editingId ? 'PUT' : 'POST';
 
           const res = await fetch(url, {
@@ -72,7 +72,7 @@ export default function Budgets() {
           });
 
           if (res.ok) {
-              const updated = await fetch('http://localhost:3000/budgets').then(r => r.json());
+              const updated = await fetch('/api/budgets').then(r => r.json());
               setBudgets(updated);
               setIsModalOpen(false);
               resetForm();
@@ -85,7 +85,7 @@ export default function Budgets() {
   const handleDelete = async (id: number) => {
       if (!confirm('¿Eliminar este presupuesto?')) return;
       try {
-          await fetch(`http://localhost:3000/budgets/${id}`, { method: 'DELETE' });
+          await fetch(`/api/budgets/${id}`, { method: 'DELETE' });
           setBudgets(budgets.filter(b => b.id !== id));
       } catch (error) {
           console.error("Error deleting budget", error);

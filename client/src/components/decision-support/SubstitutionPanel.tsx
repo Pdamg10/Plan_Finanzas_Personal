@@ -52,14 +52,29 @@ export const SubstitutionPanel: React.FC<SubstitutionPanelProps> = ({ sugerencia
       </div>
 
       <div className="space-y-3">
-        {sugerencias.map((sug, idx) => (
+        {sugerencias.map((sug, idx) => {
+          let bgColorClass = "bg-white/55 border-orange-200/50";
+          let badgeColorClass = "text-amber-700 bg-amber-50 border-amber-200/40";
+          
+          if (sug.inflacionRegistrada < 15) {
+            bgColorClass = "bg-emerald-50/70 border-emerald-200/60";
+            badgeColorClass = "text-emerald-700 bg-emerald-100 border-emerald-200";
+          } else if (sug.inflacionRegistrada < 40) {
+            bgColorClass = "bg-amber-50/70 border-amber-200/60";
+            badgeColorClass = "text-amber-700 bg-amber-100 border-amber-200";
+          } else {
+            bgColorClass = "bg-rose-50/70 border-rose-200/60";
+            badgeColorClass = "text-rose-700 bg-rose-100 border-rose-200";
+          }
+
+          return (
           <div
             key={`${sug.productoOriginal}-${idx}`}
-            className="p-4 rounded-[18px] border border-orange-200/50 bg-white/55 text-[var(--ink)] flex flex-col sm:flex-row justify-between gap-3 shadow-[var(--shadow-card)]"
+            className={`p-4 rounded-[18px] border ${bgColorClass} text-[var(--ink)] flex flex-col sm:flex-row justify-between gap-3 shadow-[var(--shadow-card)] transition-colors duration-300`}
           >
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-extrabold text-amber-700 uppercase tracking-wide bg-amber-50 px-2 py-0.5 rounded border border-amber-200/40">
+                <span className={`text-[9px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded border ${badgeColorClass}`}>
                   Inflación +{sug.inflacionRegistrada}%
                 </span>
                 <span className="text-[9px] text-[var(--muted)] font-extrabold uppercase tracking-wider">{sug.grupoNutricional}</span>
@@ -85,7 +100,8 @@ export const SubstitutionPanel: React.FC<SubstitutionPanelProps> = ({ sugerencia
               </span>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

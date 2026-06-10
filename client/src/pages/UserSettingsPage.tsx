@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Lock, Mail, Check, AlertCircle, Palette } from 'lucide-react';
+import { User, Lock, Mail, Check, AlertCircle, Palette, Eye, EyeOff } from 'lucide-react';
 import { AVATAR_COLORS, getAvatarGradient } from '../utils/avatarColors';
 
 // ─── Reusable input field ────────────────────────────────────────────────────
@@ -12,6 +12,10 @@ function FieldInput({
   onChange: (v: string) => void; placeholder?: string;
   icon: React.ElementType; optional?: boolean;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+  const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
   return (
     <div className="flex flex-col gap-1">
       <label className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text2)] pl-1 flex items-center gap-1">
@@ -21,12 +25,22 @@ function FieldInput({
       <div className="relative">
         <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
         <input
-          type={type}
+          type={inputType}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full pl-10 pr-4 py-2.5 rounded-[12px] border border-white/60 bg-white/35 focus:bg-white/60 focus:border-violet-400 outline-none transition-all font-semibold text-xs text-slate-700 placeholder:text-slate-400"
+          className={`w-full pl-10 ${isPassword ? 'pr-10' : 'pr-4'} py-2.5 rounded-[12px] border border-white/60 bg-white/35 focus:bg-white/60 focus:border-violet-400 outline-none transition-all font-semibold text-xs text-slate-700 placeholder:text-slate-400`}
         />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+            title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+          >
+            {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -85,7 +99,7 @@ export default function UserSettingsPage() {
     });
 
     try {
-      const res = await fetch('http://localhost:3000/users/profile', {
+      const res = await fetch('/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +148,7 @@ export default function UserSettingsPage() {
     setSavingPwd(true);
     setPwdMsg(null);
     try {
-      const res = await fetch('http://localhost:3000/users/password', {
+      const res = await fetch('/api/users/password', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

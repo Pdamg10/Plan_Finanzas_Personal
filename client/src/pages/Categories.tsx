@@ -31,7 +31,7 @@ export default function Categories() {
 
   const fetchCategories = async () => {
       try {
-          const res = await fetch('http://localhost:3000/categories');
+          const res = await fetch('/api/categories');
           const data = await res.json();
           setCategories(data);
       } catch (error) {
@@ -45,8 +45,8 @@ export default function Categories() {
       e.preventDefault();
       try {
           const url = editingId 
-              ? `http://localhost:3000/categories/${editingId}` 
-              : 'http://localhost:3000/categories';
+              ? `/api/categories/${editingId}` 
+              : '/api/categories';
           const method = editingId ? 'PUT' : 'POST';
 
           const res = await fetch(url, {
@@ -68,7 +68,7 @@ export default function Categories() {
   const handleDelete = async (id: number) => {
       if (!confirm('¿Eliminar esta categoría?')) return;
       try {
-          await fetch(`http://localhost:3000/categories/${id}`, { method: 'DELETE' });
+          await fetch(`/api/categories/${id}`, { method: 'DELETE' });
           fetchCategories();
       } catch (error) {
           console.error("Error deleting category", error);

@@ -29,9 +29,9 @@ export default function RecurringTransactions() {
   const fetchData = async () => {
     try {
         const [recs, accs, cats] = await Promise.all([
-            fetch('http://localhost:3000/recurring').then(res => res.json()),
-            fetch('http://localhost:3000/accounts').then(res => res.json()),
-            fetch('http://localhost:3000/categories').then(res => res.json())
+            fetch('/api/recurring').then(res => res.json()),
+            fetch('/api/accounts').then(res => res.json()),
+            fetch('/api/categories').then(res => res.json())
         ]);
         setRecurrings(recs);
         setAccounts(accs);
@@ -58,7 +58,7 @@ export default function RecurringTransactions() {
       if(!confirm('¿Procesar transacciones pendientes ahora?')) return;
       setProcessing(true);
       try {
-          await fetch('http://localhost:3000/recurring/process', { method: 'POST' });
+          await fetch('/api/recurring/process', { method: 'POST' });
           alert('Procesamiento completado. Revisa tus transacciones.');
           fetchData(); // Update last execution dates
       } catch (error) {
@@ -72,8 +72,8 @@ export default function RecurringTransactions() {
       e.preventDefault();
       try {
           const url = editingId 
-              ? `http://localhost:3000/recurring/${editingId}` 
-              : 'http://localhost:3000/recurring';
+              ? `/api/recurring/${editingId}` 
+              : '/api/recurring';
           const method = editingId ? 'PUT' : 'POST';
 
           const res = await fetch(url, {
@@ -99,7 +99,7 @@ export default function RecurringTransactions() {
 
   const handleDelete = async (id: number) => {
      if (!confirm('¿Eliminar esta recurrencia?')) return;
-     await fetch(`http://localhost:3000/recurring/${id}`, { method: 'DELETE' });
+     await fetch(`/api/recurring/${id}`, { method: 'DELETE' });
      setRecurrings(recurrings.filter(r => r.id !== id));
   };
 

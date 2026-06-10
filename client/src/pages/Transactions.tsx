@@ -29,9 +29,9 @@ export default function Transactions() {
     const headers = { 'Authorization': `Bearer ${token}` };
 
     Promise.all([
-        fetch('http://localhost:3000/transactions', { headers }).then(res => res.json()),
-        fetch('http://localhost:3000/accounts', { headers }).then(res => res.json()),
-        fetch('http://localhost:3000/categories', { headers }).then(res => res.json())
+        fetch('/api/transactions', { headers }).then(res => res.json()),
+        fetch('/api/accounts', { headers }).then(res => res.json()),
+        fetch('/api/categories', { headers }).then(res => res.json())
     ]).then(([trxs, accs, cats]) => {
         setTransactions(Array.isArray(trxs) ? trxs : []);
         setAccounts(Array.isArray(accs) ? accs : []);
@@ -47,8 +47,8 @@ export default function Transactions() {
       e.preventDefault();
       try {
           const url = editingId 
-            ? `http://localhost:3000/transactions/${editingId}`
-            : 'http://localhost:3000/transactions';
+            ? `/api/transactions/${editingId}`
+            : '/api/transactions';
           
           const method = editingId ? 'PUT' : 'POST';
           const token = localStorage.getItem('token');
@@ -70,7 +70,7 @@ export default function Transactions() {
           });
 
           if (res.ok) {
-              const updated = await fetch('http://localhost:3000/transactions', { 
+              const updated = await fetch('/api/transactions', { 
                   headers: { 'Authorization': `Bearer ${token}` } 
               }).then(r => r.json());
               setTransactions(updated);
@@ -89,7 +89,7 @@ export default function Transactions() {
   const handleDelete = async (id: number) => {
       if(!confirm('¿Eliminar esta transacción?')) return;
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3000/transactions/${id}`, { 
+      await fetch(`/api/transactions/${id}`, { 
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
       });

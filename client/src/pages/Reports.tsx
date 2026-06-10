@@ -20,10 +20,10 @@ export default function Reports() {
   const fetchData = async () => {
     try {
         const [expenses, cashflow, inVsEx, accs] = await Promise.all([
-            fetch('http://localhost:3000/reports/expenses-by-category').then(res => res.json()),
-            fetch('http://localhost:3000/reports/cashflow').then(res => res.json()),
-            fetch('http://localhost:3000/reports/income-vs-expenses').then(res => res.json()),
-            fetch('http://localhost:3000/accounts').then(res => res.json())
+            fetch('/api/reports/expenses-by-category').then(res => res.json()),
+            fetch('/api/reports/cashflow').then(res => res.json()),
+            fetch('/api/reports/income-vs-expenses').then(res => res.json()),
+            fetch('/api/accounts').then(res => res.json())
         ]);
         setExpenseData(expenses);
         setCashFlowData(cashflow);
@@ -74,7 +74,7 @@ export default function Reports() {
               if (!fecha || !descripcion || !monto) continue;
 
               try {
-                  await fetch('http://localhost:3000/transactions', {
+                  await fetch('/api/transactions', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({

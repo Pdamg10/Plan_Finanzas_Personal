@@ -29,7 +29,7 @@ export default function SavingsPage() {
                 value={ingresoNeto === 0 ? '' : ingresoNeto}
                 onChange={(e) => setIngresoNeto(Number(e.target.value))}
                 placeholder="2500"
-                className="w-full pl-8 font-mono font-bold text-slate-800 rounded-[12px] border border-white/60 bg-white/45 focus:outline-none"
+                className="w-full !pl-9 font-mono font-bold text-slate-800 rounded-[12px] border border-white/60 bg-white/45 focus:outline-none"
               />
             </div>
           </div>

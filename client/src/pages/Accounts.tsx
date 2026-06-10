@@ -22,7 +22,7 @@ export default function Accounts() {
   const fetchAccounts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3000/accounts', {
+      const res = await fetch('/api/accounts', {
         headers: { 
             'Authorization': `Bearer ${token}`
         }
@@ -41,8 +41,8 @@ export default function Accounts() {
     e.preventDefault();
     try {
       const url = editingAccount 
-        ? `http://localhost:3000/accounts/${editingAccount.id}`
-        : 'http://localhost:3000/accounts';
+        ? `/api/accounts/${editingAccount.id}`
+        : '/api/accounts';
       
       const method = editingAccount ? 'PUT' : 'POST';
       const token = localStorage.getItem('token');
@@ -75,7 +75,7 @@ export default function Accounts() {
     if (!confirm('¿Estás seguro de eliminar esta cuenta?')) return;
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3000/accounts/${id}`, { 
+      await fetch(`/api/accounts/${id}`, { 
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -90,7 +90,7 @@ export default function Accounts() {
     if (!transferData.originId || !transferData.destId) return;
 
     try {
-        const res = await fetch('http://localhost:3000/transactions', {
+        const res = await fetch('/api/transactions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

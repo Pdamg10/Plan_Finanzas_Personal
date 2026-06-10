@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { User, Lock, Mail } from 'lucide-react';
 
 export default function Login() {
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,19 +17,37 @@ export default function Login() {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:3000/auth/login', {
+      const endpoint = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
+      const payload = isRegisterMode ? { email, password, nombre } : { email, password };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Credenciales incorrectas');
+      const text = await res.text();
+      let data: any = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        console.error('No se pudo parsear el JSON:', text);
       }
 
-      login(data.token, data.user);
+      if (!res.ok) {
+        if (data.message === 'User already exists') {
+          throw new Error('Ya existe una cuenta con este correo.');
+        }
+        throw new Error(data.message || `Error del servidor: ${res.status} ${res.statusText}`);
+      }
+
+      // Si las credenciales son incorrectas, nuestro backend actualmente devuelve 201 Created con { message: 'Invalid credentials' } 
+      // y no lanza un código de error HTTP (esto es un bug del backend, pero lo manejamos aquí)
+      if (data.message === 'Invalid credentials') {
+        throw new Error('Credenciales incorrectas');
+      }
+
+      login(data.access_token, data.user);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       if (msg === 'Failed to fetch') {
@@ -68,6 +88,23 @@ export default function Login() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isRegisterMode && (
+            <div className="field">
+              <label className="text-xs font-bold text-[var(--text2)] pl-1">Nombre Completo</label>
+              <div className="relative mt-1">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="w-full !pl-11 pr-4 py-2.5 rounded-[12px] border border-white/60 bg-white/35 focus:bg-white/60 focus:border-violet-500 outline-none transition-all font-bold text-xs text-slate-700 placeholder:text-slate-400"
+                  placeholder="Ej. Juan Pérez"
+                  required={isRegisterMode}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="field">
             <label className="text-xs font-bold text-[var(--text2)] pl-1">Correo Electrónico</label>
             <div className="relative mt-1">
@@ -76,7 +113,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 rounded-[12px] border border-white/60 bg-white/35 focus:bg-white/60 focus:border-violet-500 outline-none transition-all font-bold text-xs text-slate-700 placeholder:text-slate-400"
+                className="w-full !pl-11 pr-4 py-2.5 rounded-[12px] border border-white/60 bg-white/35 focus:bg-white/60 focus:border-violet-500 outline-none transition-all font-bold text-xs text-slate-700 placeholder:text-slate-400"
                 placeholder="correo@ejemplo.com"
                 required
               />
@@ -91,7 +128,7 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 rounded-[12px] border border-white/60 bg-white/35 focus:bg-white/60 focus:border-violet-500 outline-none transition-all font-bold text-xs text-slate-700 placeholder:text-slate-400"
+                className="w-full !pl-11 pr-4 py-2.5 rounded-[12px] border border-white/60 bg-white/35 focus:bg-white/60 focus:border-violet-500 outline-none transition-all font-bold text-xs text-slate-700 placeholder:text-slate-400"
                 placeholder="••••••••"
                 required
               />
@@ -103,11 +140,22 @@ export default function Login() {
             disabled={isLoading}
             className="btn btn-primary !w-full py-3 mt-4 text-xs font-bold rounded-[12px] flex justify-center items-center gap-1.5"
           >
-            {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
+            {isLoading ? 'Procesando...' : (isRegisterMode ? 'Crear Cuenta' : 'Iniciar Sesión')}
           </button>
         </form>
 
-
+        <div className="mt-6 text-center">
+          <button 
+            type="button" 
+            onClick={() => {
+              setIsRegisterMode(!isRegisterMode);
+              setError('');
+            }}
+            className="text-xs font-bold text-violet-600 hover:text-violet-700 transition-colors bg-transparent border-none outline-none cursor-pointer"
+          >
+            {isRegisterMode ? '¿Ya tienes una cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate aquí'}
+          </button>
+        </div>
       </div>
     </div>
   );

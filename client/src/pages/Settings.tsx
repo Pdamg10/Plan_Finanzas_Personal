@@ -23,7 +23,7 @@ export default function Settings() {
 
   const fetchProfile = async () => {
       try {
-          const res = await fetch('http://localhost:3000/users/profile');
+          const res = await fetch('/api/users/profile');
           if (res.ok) {
               const data = await res.json();
               setProfile({
@@ -43,7 +43,7 @@ export default function Settings() {
       e.preventDefault();
       setSaving(true);
       try {
-          const res = await fetch('http://localhost:3000/users/profile', {
+          const res = await fetch('/api/users/profile', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(profile)
